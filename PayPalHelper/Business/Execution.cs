@@ -1,4 +1,5 @@
-﻿using PayPalHelper.Model;
+﻿using PayPalHelper.Data;
+using PayPalHelper.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,36 +15,21 @@ internal class Execution
 
     internal static void DoShit()
     {
-        var fileLines = Data.GetFileLines();
+        var fileLines = PayPalData.GetFileLines();
         var transactions = Helper.ConvertCsvLinesToTransactions(fileLines);
 
+        var allNameGroups = transactions.GroupBy(d => d?.Name ?? "").ToList();
 
+        var filtredNameGroups = allNameGroups;
 
-
-
-        return;
-
-        var allEmailGroups = transactions.GroupBy(d => d?.AbsenderEMailAdresse ?? "").ToList();
-        var filtredEmailGroups = allEmailGroups.Where(amg =>
+        foreach (var nameGroup in filtredNameGroups)
         {
-            if (!_bewohnerMails.Contains(amg.Key))
-            {
-                Console.WriteLine($"Skipping mail: {amg.Key}");
-                return false;
-            }
-
-            return true;
-        }).ToList();
-
-
-        foreach (var mailGroup in filtredEmailGroups)
-        {
-            var key = string.IsNullOrWhiteSpace(mailGroup.Key) ? "------------" : mailGroup.Key;
-            var name = mailGroup.FirstOrDefault(f => f != null && f.Name != null)?.Name ?? "No name";
+            var key = string.IsNullOrWhiteSpace(nameGroup.Key) ? "------------" : nameGroup.Key;
+            var name = nameGroup.FirstOrDefault(f => f != null && f.Name != null)?.Name ?? "No name";
             Console.WriteLine($"Mail: {key} | {name}");
 
             decimal balance = 0;
-            foreach (var transaction in mailGroup)
+            foreach (var transaction in nameGroup)
             {
                 if (transaction == null || transaction.Netto == null)
                 {
