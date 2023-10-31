@@ -5,14 +5,17 @@ namespace PayPalHelper.Business;
 
 internal static class Helper
 {
-    internal static List<PpTransaction?> ConvertCsvLinesToTransactions(List<string> fileLines)
+    internal static List<PpTransaction> ConvertCsvLinesToTransactions(List<string> fileLines)
     {
-        return fileLines.Select(fl =>
+        var list = fileLines.Select(fl =>
         {
             var split = fl.Split("\",\"");
             var trimedSplit = split.Select(s => s.Trim('"')).ToList();
             return trimedSplit != null ? PpTransaction.Create(trimedSplit) : null;
         }).ToList();
+
+        list.RemoveAll(s => s == null);
+        return list;
     }
 
     internal static string? GetValueIfSame(List<string?> values, out List<string?> extraValues)

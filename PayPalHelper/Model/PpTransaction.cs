@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using PayPalHelper.Enum;
 
 namespace PayPalHelper.Model;
 
@@ -8,6 +9,9 @@ internal class PpTransaction
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
+    public Kasse Relevance { get; set; }
+
+    //PayPal Data
     public string? Datum { get; set; }
     public DateTime? Uhrzeit { get; set; }
     public string? Zeitzone { get; set; }
@@ -15,12 +19,12 @@ internal class PpTransaction
     public string? Typ { get; set; }
     public string? Status { get; set; }
     public string? Währung { get; set; }
-    public decimal? Brutto { get; set; }
+    public decimal Brutto { get; set; }
     public string? Gebühr { get; set; }
     public decimal? Netto { get; set; }
     public string? AbsenderEMailAdresse { get; set; }
     public string? EmpfängerEMailAdresse { get; set; }
-    public string? Transaktionscode { get; set; }
+    public string Transaktionscode { get; set; }
     public string? Lieferadresse { get; set; }
     public string? AdressStatus { get; set; }
     public string? Artikelbezeichnung { get; set; }
@@ -63,7 +67,7 @@ internal class PpTransaction
         Typ = typ;
         Status = status;
         Währung = währung;
-        Brutto = ToDecimalValue(brutto);
+        Brutto = ToDecimalValue(brutto) ?? 0;
         Gebühr = gebühr;
         Netto = ToDecimalValue(netto);
         AbsenderEMailAdresse = absenderEMailAdresse;
@@ -107,7 +111,7 @@ internal class PpTransaction
 
     private static string? G(List<string> list, int num)
     {
-        var value = list[num];
+        var value = list[num].Trim();
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 

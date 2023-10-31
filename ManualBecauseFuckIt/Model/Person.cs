@@ -6,13 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PayPalHelper.Model;
+namespace ManualBecauseFuckIt.Model;
 
 internal class Person
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public List<PpTransaction> Transactions { get; set; } = new();
+    public int Id { get; set; } 
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string DisplayName => $"{FirstName ?? "{firstName}"} {LastName ?? "{firstName}"}";
 }

@@ -1,3 +1,4 @@
+using AuditHelper.Buisness;
 using AuditHelper.Data;
 using AuditHelper.Model;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ namespace AuditHelper.Forms;
 
 public partial class MainForm : Form
 {
+    #region formCreation
     public MainForm() => InitializeComponent();
 
     private void MainForm_Load(object sender, EventArgs e)
@@ -26,16 +28,16 @@ public partial class MainForm : Form
         var peopleList = dbContext.People.AsNoTracking().ToList();
         dataGridViewPeople.DataSource = peopleList;
     }
+    #endregion
 
+    #region buttons_events
     private void ButtonPersonAdd_Click(object sender, EventArgs e)
     {
-        var inputForm = new TextInputForm("Input the Persons name");
-        if (inputForm.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(inputForm.labelText.Text))
+        var input = PromptForInput("Input the Persons name");
+        if (string.IsNullOrWhiteSpace(input))
             return;
 
-        using var dbContext = new DatabaseContext();
-        dbContext.People.Add(new Person(inputForm.labelText.Text));
-        dbContext.SaveChanges();
+        DatabaseManager.AddNewPerson(new Person(input));
     }
 
     private void ButtonPersonRemove_Click(object sender, EventArgs e)
@@ -46,34 +48,11 @@ public partial class MainForm : Form
 
         var result = MessageBox.Show($"Are you sure you want to remove the person '{selectedPerson.Name}' ({selectedPerson.Id}).", "Confirm", MessageBoxButtons.YesNo);
         if (result == DialogResult.Yes)
-        {
-            using var dbContext = new DatabaseContext();
-            dbContext.People.Remove(selectedPerson);
-            dbContext.SaveChanges();
-        }
+            DatabaseManager.RemovePerson(selectedPerson);
     }
 
     private void ButtonPurchaseAdd_Click(object sender, EventArgs e)
     {
-        var inFormFilePath = new TextInputForm("Input the FilePath");
-        if (inFormFilePath.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(inFormFilePath.labelText.Text))
-            return;
-
-        var filePath = inFormFilePath.labelText.Text.Trim().Trim('"');
-
-
-        var inFormDecimal = new TextInputForm("Input price with '.'");
-        if (inFormDecimal.ShowDialog() != DialogResult.OK || !decimal.TryParse(inFormDecimal.labelText.Text, out decimal price))
-            return;
-
-
-        var selectedPerson = GetSelectedPerson();
-        if (selectedPerson == null)
-            return;
-
-        using var dbContext = new DatabaseContext();
-        selectedPerson.Purchases.Add(new Purchase(filePath, price));
-        dbContext.SaveChanges();
     }
 
     private void ButtonPurchaseRemove_Click(object sender, EventArgs e)
@@ -91,59 +70,73 @@ public partial class MainForm : Form
 
     }
 
+    #endregion
+
+    #region dataGridView_events
     private void DataGridViewPeople_SelectionChanged(object sender, EventArgs e)
     {
-        var selectedPerson = GetSelectedPerson();
-        if (selectedPerson == null)
-            return;
-
-        dataGridViewPurchase.DataSource = selectedPerson.Purchases;
     }
 
-    private Person? GetSelectedPerson()
-    {
-        if (dataGridViewPeople.SelectedRows.Count <= 0)
-            return null;
-
-        if (dataGridViewPeople.SelectedRows.Cast<DataGridViewRow>().First().DataBoundItem is not Person selectedPerson)
-        {
-            MessageBox.Show("How is the selected Person null?");
-            return null;
-        }
-
-        using var dbContext = new DatabaseContext();
-        var foundPerson = dbContext.People.AsNoTracking().FirstOrDefault(p => p.Id == selectedPerson.Id);
-        if (foundPerson == null)
-            MessageBox.Show("Could not find matching person in database.");
-
-        return foundPerson;
-    }
 
     private void DataGridViewPurchase_SelectionChanged(object sender, EventArgs e)
     {
-        var selectedPerson = GetSelectedPerson();
-
-        if (selectedPerson == null ||dataGridViewPurchase.SelectedRows.Count <= 0)
-            return;
-
-        if (dataGridViewPurchase.SelectedRows.Cast<DataGridViewRow>().First().DataBoundItem is not Purchase selectedPurchase)
-        {
-            MessageBox.Show("How is the selected purchase null?");
-            return;
-        }
-
-        var foundPurchase  = selectedPerson.Purchases.FirstOrDefault(p => p.Id == selectedPurchase.Id);
-        if (foundPurchase == null)
-        {
-            MessageBox.Show("Could not find matching purchase in database.");
-            return;
-        }
-
-        dataGridViewItems.DataSource = foundPurchase.Items;
     }
 
     private void DataGridViewItems_SelectionChanged(object sender, EventArgs e)
     {
 
     }
+    #endregion
+
+    #region helperMethods
+    private Person? GetSelectedPerson()
+    {
+        if (dataGridViewPeople.SelectedRows.Count <= 0)
+            return null;
+
+        if (dataGridViewPeople.SelectedRows.Cast<DataGridViewRow>().First().DataBoundItem is not Person selectedPerson)
+            return null;
+
+        return selectedPerson;
+    }
+
+    private Purchase? GetSelectedPurchase()
+    {
+        if (dataGridViewPurchase.SelectedRows.Count <= 0)
+            return null;
+
+        if (dataGridViewPurchase.SelectedRows.Cast<DataGridViewRow>().First().DataBoundItem is not Purchase selectedPurchase)
+            return null;
+
+        return selectedPurchase;
+    }
+
+    private Item? GetSelectedItem()
+    {
+        if (dataGridViewItems.SelectedRows.Count <= 0)
+            return null;
+
+        if (dataGridViewItems.SelectedRows.Cast<DataGridViewRow>().First().DataBoundItem is not Item selectedItem)
+            return null;
+
+        return selectedItem;
+    }
+
+    private string? PromptForInput(string labelText) => PromptForInputs(labelText).First();
+    private List<string?> PromptForInputs(params string[] labelTexts)
+    {
+        var results = new List<string?>();
+
+        foreach (var labelText in labelTexts)
+        {
+            var textInputForm = new TextInputForm(labelText);
+            if (textInputForm.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(textInputForm.textBoxInput.Text))
+                results.Add(null);
+            else
+                results.Add(textInputForm.textBoxInput.Text);
+        }
+
+        return results;
+    }
+    #endregion
 }
